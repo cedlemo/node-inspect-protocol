@@ -5,10 +5,10 @@ const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
   terminal: true
-});
+})
 
 const args = process.argv
-if(args.length != 3) {
+if (args.length != 3) {
   displayUsage()
   process.exit(1)
 }
@@ -46,11 +46,11 @@ ws.on('error', data => {
   console.log(data)
 })
 
-ws.on('open', function(data) {
+ws.on('open', data => {
   console.log('Connection opened')
   console.log('Send debugger information')
   // let cmd = {"seq":1, "id":12, "type":"request", "command": "Debugger.getPossibleBreakPoints"}
-  let cmd = {'id':1, 'method':'Debugger.enable'}
+  let cmd = { 'id': 1, 'method': 'Debugger.enable' }
   ws.send(JSON.stringify(cmd))
   // List break points /!\ need a location https://chromedevtools.github.io/devtools-protocol/v8/Debugger#type-Location
   // cmd = {'id':3, 'method': 'Debugger.getPossibleBreakpoints', 'data': {'start': 0}}
@@ -69,14 +69,13 @@ ws.on('close', data => {
   console.log('Connection closed')
 })
 
-function displayUsage() {
+function displayUsage () {
   console.log('Usage:')
   console.log('\tnode debugger.js url')
   console.log('with url:')
   console.log('\tws://127.0.0.1:9229/d0559b7d-1b92-4e42-8b09-ef804627e57a')
 }
 
-
-rl.on('line', function(line){
-    console.log(line);
+rl.on('line', line => {
+  console.log(line)
 })
