@@ -23,20 +23,21 @@ try {
   process.exit(1)
 }
 
-let sources = {}
+let sources = []
+let responses = {}
 ws.on('message', data => {
   console.log("Message recieved:")
   console.log(data)
   let jsonData = JSON.parse(data)
   if(jsonData.method === 'Debugger.scriptParsed') {
       let source = jsonData.params
-      sources[source.scriptId] = source
+      sources.push(source)
   }
   if(jsonData.id === 1) { // this is the answer to Debugger.enable
+    responses[jsonData.id] = jsonData
     console.log('Parsed finished')
-    Object.keys(sources).sort((a, b) => a - b).forEach(k => {
-      console.log(k, sources[k].url)
-    })
+    // Display the parsed file information
+    // sources.forEach(elt => console.log(elt))
   }
   console.log(data)
 })
@@ -52,6 +53,12 @@ ws.on('open', data => {
   // let cmd = {"seq":1, "id":12, "type":"request", "command": "Debugger.getPossibleBreakPoints"}
   let cmd = { 'id': 1, 'method': 'Debugger.enable' }
   ws.send(JSON.stringify(cmd))
+
+  // dirtySleep(100)
+  // Find the scriptId for the server.js file
+  let serverFile = `file://${__dirname}/server.js`
+  let scriptId = sources.find(elt => {elt.url.match(/serverFile/)})
+  console.log(scriptId)
   // List break points /!\ need a location https://chromedevtools.github.io/devtools-protocol/v8/Debugger#type-Location
   // cmd = {'id':3, 'method': 'Debugger.getPossibleBreakpoints', 'data': {'start': 0}}
   // ws.send(JSON.stringify(cmd))
@@ -64,6 +71,10 @@ ws.on('open', data => {
   //   ws.send(line)
   // })
 })
+
+// async function dirtySleep (ms) {
+//   await (new Promise(resolve => setTimeout(resolve, ms)))
+// }
 
 ws.on('close', data => {
   console.log('Connection closed')
