@@ -25,7 +25,8 @@ try {
 
 let sources = []
 let responses = {}
-let commandsQueues = []
+let commandsQueue = []
+let historyQueue = []
 
 let idGenerator = function () {
   let id = 1
@@ -43,22 +44,60 @@ let idGenerator = function () {
   }
 }
 
+let id = idGenerator()
+
+let debuggerId
+
+// Each command will have this form:
+// take a websocket
+// get an id
+// register an object in the commandsQueue. This object will have the following
+// field:
+// id: the id of the command
+// onMessageUntilEnded: a function that will be triggered on each event related
+// to the current command until this command has been answered
+// result: a function executed when the server return a result message for this
+// command.
+// The two last functions return true or false if we want it to not be logged in
+// the on 'message' event.
+
+let sendDebuggerEnable = (ws) => {
+  let _id = id.next()
+  let cmd = { 'id': _id, 'method': 'Debugger.enable' }
+  commandsQueue.push({
+    id: _id,
+    onMessageUntilEnded: (jsonData) => {
+      if (jsonData.method === 'Debugger.scriptParsed') {
+        console.log('Debugger.enable: ', jsonData.params.url)
+        let source = jsonData.params
+        sources.push(source)
+        return true
+      }
+      return false
+    },
+    result: (jsonData) => {
+      debuggerId = jsonData.debuggerId
+      console.log('Debugger.enable command response: debuggerId -> ', debuggerId)
+      return true
+    }
+  })
+  ws.send(JSON.stringify(cmd))
+}
+
 ws.on('message', data => {
-  console.log('Message recieved:')
   let jsonData = JSON.parse(data)
-  if (jsonData.id === 1) { // this is the answer to Debugger.enable
-    responses[jsonData.id] = jsonData
-    console.log('Parsed finished')
-    // Display the parsed file information
-    // sources.forEach(elt => console.log(elt))
-  } else {
-    if (jsonData.method === 'Debugger.scriptParsed') {
-      let source = jsonData.params
-      sources.push(source)
+  let handled = false //
+  for (let i = 0; i < commandsQueue.length; i++) {
+    let command = commandsQueue[i]
+    if (jsonData.id === command.id) {
+      if (command.result(jsonData.result)) { handled = true }
+      historyQueue.push(commandsQueue.splice(i, 1))
+      i--
     } else {
-      console.log(data)
+      if (command.onMessageUntilEnded(jsonData)) { handled = true }
     }
   }
+  if (!handled) { console.log('Message recieved:', data) }
 })
 
 ws.on('error', data => {
@@ -70,8 +109,7 @@ ws.on('open', _data => {
   console.log('Connection opened')
   console.log('Send debugger information')
   // let cmd = {"seq":1, "id":12, "type":"request", "command": "Debugger.getPossibleBreakPoints"}
-  let cmd = { 'id': 1, 'method': 'Debugger.enable' }
-  ws.send(JSON.stringify(cmd))
+  sendDebuggerEnable(ws)
 
   // dirtySleep(100)
   // Find the scriptId for the server.js file
