@@ -6,7 +6,7 @@ When launching a JavaScript application with `node --inspect`, there is a websoc
 server that wait for a debugger. The debugger can connect using an url that looks like this
 one:
 ```
-https://chromedevtools.github.io/devtools-protocol/v8/Debugger/
+ws://127.0.0.1:9229/14936faf-0fc8-4d49-ba43-f9d8187382a3
 ```
 
 After the connection is initiated, the client debugger can send command to the
@@ -16,7 +16,7 @@ Because of the asynchronous way of working of node, every messages send by the
 client must provide an id. The server will send a result with the same id send
 in the request.
 
-The protocol used is discribed at:
+The protocol used is discribed here:
 * https://chromedevtools.github.io/devtools-protocol/v8/Debugger/
 
 ## Description of the protocol
@@ -34,7 +34,7 @@ This command force node to load the script and its dependencies. When they are
 parsed, it triggers the [Debugger.scriptParsed](https://chromedevtools.github.io/devtools-protocol/v8/Debugger#event-scriptParsed) event for each of them and return to the client debugger a lot of information about
 those scripts.
 
-The data returned are of the following form:
+The data returned is of the following form:
 
 ```json
 {
@@ -61,6 +61,7 @@ response with the same id as the initial request and a `debuggerId`.
 ```json
 {"id":1,"result":{"debuggerId":"(D750AD89818A150E3155AC1D6ECB7BB)"}}
 ```
+
 ### Managing break points
 
 * list availables break points
