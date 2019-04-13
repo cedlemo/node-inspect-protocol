@@ -25,7 +25,23 @@ try {
 
 let sources = []
 let responses = {}
+let commandsQueues = []
 
+let idGenerator = function () {
+  let id = 1
+  return {
+    next: function () {
+      id += 1
+      return this.value()
+    },
+    value: function () {
+      return id
+    },
+    reset: function () {
+      id = 0
+    }
+  }
+}
 
 ws.on('message', data => {
   console.log('Message recieved:')
