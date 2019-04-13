@@ -8,7 +8,7 @@ const rl = readline.createInterface({
 })
 
 const args = process.argv
-if (args.length != 3) {
+if (args.length !== 3) {
   displayUsage()
   process.exit(1)
 }
@@ -17,29 +17,32 @@ const url = args[2]
 
 let ws = null
 try {
-   ws = new WebSocket(url)
-} catch(e) {
+  ws = new WebSocket(url)
+} catch (e) {
   console.log('Unable to initiate connection', e.message)
   process.exit(1)
 }
 
 let sources = []
 let responses = {}
+
+
 ws.on('message', data => {
-  console.log("Message recieved:")
-  console.log(data)
+  console.log('Message recieved:')
   let jsonData = JSON.parse(data)
-  if(jsonData.method === 'Debugger.scriptParsed') {
-      let source = jsonData.params
-      sources.push(source)
-  }
-  if(jsonData.id === 1) { // this is the answer to Debugger.enable
+  if (jsonData.id === 1) { // this is the answer to Debugger.enable
     responses[jsonData.id] = jsonData
     console.log('Parsed finished')
     // Display the parsed file information
     // sources.forEach(elt => console.log(elt))
+  } else {
+    if (jsonData.method === 'Debugger.scriptParsed') {
+      let source = jsonData.params
+      sources.push(source)
+    } else {
+      console.log(data)
+    }
   }
-  console.log(data)
 })
 
 ws.on('error', data => {
@@ -47,7 +50,7 @@ ws.on('error', data => {
   console.log(data)
 })
 
-ws.on('open', data => {
+ws.on('open', _data => {
   console.log('Connection opened')
   console.log('Send debugger information')
   // let cmd = {"seq":1, "id":12, "type":"request", "command": "Debugger.getPossibleBreakPoints"}
@@ -56,6 +59,7 @@ ws.on('open', data => {
 
   // dirtySleep(100)
   // Find the scriptId for the server.js file
+  console.log('Find server file')
   let serverFile = `file://${__dirname}/server.js`
   let scriptId = sources.find(elt => {elt.url.match(/serverFile/)})
   console.log(scriptId)
